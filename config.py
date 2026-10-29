@@ -25,9 +25,9 @@ DATABASE_PATH = DATA_DIR / "pathfinder.db"
 
 # Flask Configuration
 SECRET_KEY = os.environ.get("SECRET_KEY", "pathfinder-ai-secret-key-2026-college-demo")
-DEBUG = True
-HOST = "127.0.0.1"
-PORT = 5000
+DEBUG = False
+HOST = "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"
+PORT = int(os.environ.get("PORT", 5000))
 
 # Machine Learning Feature Schema
 FEATURE_COLUMNS = [
