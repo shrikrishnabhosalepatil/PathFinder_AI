@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — PathFinder AI{% endblock %}
+{% block page_title %}Cohort Placement & Skill Analytics{% endblock %}
+{% block page_subtitle %}Interactive multi-dimensional evaluation based on actual student database records{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Placement Category Distribution -->
+    <div class="col-12 col-lg-4">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold m-0 text-dark">Category Distribution</h6>
+                <span class="badge bg-light text-muted border">Doughnut</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <small class="text-muted d-block mt-3 text-center">
+                Distribution across High, Moderate, and At-Risk categories
+            </small>
+        </div>
+    </div>
+
+    <!-- Chart 2: Technical vs. Communication Correlation -->
+    <div class="col-12 col-lg-8">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold m-0 text-dark">Technical Skill vs. Communication Rating</h6>
+                <span class="badge bg-light text-muted border">Correlation Scatter</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="techCommScatterChart"></canvas>
+            </div>
+            <small class="text-muted d-block mt-3">
+                <i class="bi bi-info-circle me-1"></i> Evaluates interview readiness: Candidates in the top-right quadrant balance both technical competence and behavioral communication.
+            </small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart 3: CGPA vs Placement Probability -->
+    <div class="col-12 col-lg-6">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold m-0 text-dark">CGPA vs. Placement Probability (%)</h6>
+                <span class="badge bg-light text-muted border">Trend Analysis</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="cgpaProbScatterChart"></canvas>
+            </div>
+            <small class="text-muted d-block mt-3">
+                Shows the statistical relationship between academic CGPA and model placement likelihood.
+            </small>
+        </div>
+    </div>
+
+    <!-- Chart 4: Career Domain Preferences -->
+    <div class="col-12 col-lg-6">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold m-0 text-dark">Career Domain Distribution</h6>
+                <span class="badge bg-light text-muted border">Aspirations</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="domainBarChart"></canvas>
+            </div>
+            <small class="text-muted d-block mt-3">
+                Frequency of candidate career preferences across IT engineering domains.
+            </small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Chart 5: Active Backlogs Impact on Placement -->
+    <div class="col-12">
+        <div class="app-card p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold m-0 text-dark">Impact of Active Backlogs on Placement Likelihood</h6>
+                <span class="badge badge-danger">Recruitment Risk Factor</span>
+            </div>
+            <div style="height: 240px; position: relative;">
+                <canvas id="backlogImpactChart"></canvas>
+            </div>
+            <p class="text-muted small mt-3 mb-0">
+                <i class="bi bi-shield-exclamation text-danger me-1"></i> Standing backlogs represent the single highest negative weighting factor in campus recruitment drives, directly invalidating candidate eligibility for over 85% of visiting IT corporations.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Empty state container (dynamically toggled if no records) -->
+<div id="analyticsEmptyState" class="app-card p-5 text-center my-4 d-none">
+    <div class="kpi-icon-box icon-purple mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
+        <i class="bi bi-bar-chart"></i>
+    </div>
+    <h5 class="fw-bold text-dark">No Analytics Data Available</h5>
+    <p class="text-muted small" style="max-width: 360px; margin: 0 auto 1.25rem;">
+        Database currently has no student records. Add student assessments to populate real-time analytics charts.
+    </p>
+    <a href="{{ url_for('predict_page') }}" class="btn-primary-custom">Evaluate Student</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const resp = await fetch("/api/analytics-data");
+        const json = await resp.json();
+
+        if (!json.success || !json.data.has_data) {
+            document.getElementById("analyticsEmptyState").classList.remove("d-none");
+            return;
+        }
+
+        const data = json.data;
+
+        // Chart 1: Placement Category Distribution Doughnut
+        new Chart(document.getElementById("categoryChart"), {
+            type: "doughnut",
+            data: {
+                labels: Object.keys(data.category_distribution),
+                datasets: [{
+                    data: Object.values(data.category_distribution),
+                    backgroundColor: ["#10B981", "#5B4BC4", "#EF4444"],
+                    borderWidth: 2,
+                    borderColor: "#FFFFFF"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+                },
+                cutout: "65%"
+            }
+        });
+
+        // Chart 2: Tech vs Comm Scatter Chart
+        new Chart(document.getElementById("techCommScatterChart"), {
+            type: "scatter",
+            data: {
+                datasets: [{
+                    label: "Students",
+                    data: data.tech_vs_comm.map(p => ({ x: p.x, y: p.y })),
+                    backgroundColor: "rgba(91, 75, 196, 0.75)",
+                    borderColor: "#5B4BC4",
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { min: 1, max: 10, title: { display: true, text: "Technical Skill Rating (1–10)", color: "#64748B" } },
+                    y: { min: 1, max: 10, title: { display: true, text: "Communication Rating (1–10)", color: "#64748B" } }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const pt = data.tech_vs_comm[context.dataIndex];
+                                return `${pt.name}: Tech ${pt.x}, Comm ${pt.y} (Prob: ${pt.prob}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart 3: CGPA vs Probability Scatter Chart
+        new Chart(document.getElementById("cgpaProbScatterChart"), {
+            type: "scatter",
+            data: {
+                datasets: [{
+                    label: "Student Likelihood",
+                    data: data.cgpa_vs_probability.map(p => ({ x: p.x, y: p.y })),
+                    backgroundColor: "rgba(16, 185, 129, 0.75)",
+                    borderColor: "#10B981",
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { min: 4.5, max: 10, title: { display: true, text: "CGPA (0–10)", color: "#64748B" } },
+                    y: { min: 0, max: 100, title: { display: true, text: "Placement Probability (%)", color: "#64748B" } }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const pt = data.cgpa_vs_probability[context.dataIndex];
+                                return `${pt.name}: CGPA ${pt.x} -> ${pt.y}% Likelihood`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart 4: Career Domain Distribution Bar Chart
+        new Chart(document.getElementById("domainBarChart"), {
+            type: "bar",
+            data: {
+                labels: Object.keys(data.domain_distribution),
+                datasets: [{
+                    label: "Interested Students",
+                    data: Object.values(data.domain_distribution),
+                    backgroundColor: "rgba(91, 75, 196, 0.8)",
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Chart 5: Active Backlogs Impact Bar Chart
+        new Chart(document.getElementById("backlogImpactChart"), {
+            type: "bar",
+            data: {
+                labels: Object.keys(data.backlog_impact),
+                datasets: [{
+                    label: "Average Placement Probability (%)",
+                    data: Object.values(data.backlog_impact),
+                    backgroundColor: ["#10B981", "#F59E0B", "#EF4444", "#991B1B"],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, title: { display: true, text: "Avg Placement Likelihood (%)", color: "#64748B" } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+    } catch (e) {
+        console.error("Analytics chart render error:", e);
+    }
+});
+</script>
+{% endblock %}

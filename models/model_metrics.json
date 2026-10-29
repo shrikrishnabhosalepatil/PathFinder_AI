@@ -1,0 +1,46 @@
+{
+    "model_type": "Random Forest Classifier (Ensemble)",
+    "features": [
+        "cgpa",
+        "aptitude_score",
+        "technical_score",
+        "communication_score",
+        "internships",
+        "projects",
+        "backlogs"
+    ],
+    "metrics": {
+        "accuracy": 95.0,
+        "precision": 98.0,
+        "recall": 96.08,
+        "f1_score": 97.03,
+        "roc_auc": 99.09
+    },
+    "confusion_matrix": [
+        [
+            40,
+            5
+        ],
+        [
+            10,
+            245
+        ]
+    ],
+    "feature_importances": {
+        "backlogs": 47.72,
+        "cgpa": 21.67,
+        "aptitude_score": 12.25,
+        "technical_score": 9.25,
+        "communication_score": 4.71,
+        "projects": 2.36,
+        "internships": 2.04
+    },
+    "dataset_info": {
+        "total_records": 1500,
+        "train_samples": 1200,
+        "test_samples": 300,
+        "placed_ratio": 85.1
+    },
+    "trained_at": "2026-10-29 23:06:33",
+    "disclaimer": "Metrics calculated on synthetic demonstration dataset. Real-world placement outcomes depend on market conditions, company cutoffs, and soft-skill interviews."
+}

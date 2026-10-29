@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PathFinder AI{% endblock %}
+{% block page_title %}Placement Intelligence Overview{% endblock %}
+{% block page_subtitle %}Predictive campus placement readiness and real-time student analytics{% endblock %}
+
+{% block content %}
+<!-- KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Students Analyzed -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="app-card kpi-card">
+            <div>
+                <div class="kpi-label">Students Analyzed</div>
+                <div class="kpi-value">{{ stats.total_students }}</div>
+                <div class="kpi-meta">
+                    <i class="bi bi-people text-primary"></i>
+                    <span>Records in database</span>
+                </div>
+            </div>
+            <div class="kpi-icon-box icon-purple">
+                <i class="bi bi-mortarboard"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Readiness Score -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="app-card kpi-card">
+            <div>
+                <div class="kpi-label">Avg Readiness Score</div>
+                <div class="kpi-value">{{ stats.avg_readiness }}<span class="fs-6 text-muted">/100</span></div>
+                <div class="kpi-meta">
+                    <i class="bi bi-bullseye text-success"></i>
+                    <span>Composite readiness index</span>
+                </div>
+            </div>
+            <div class="kpi-icon-box icon-green">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avg Placement Likelihood -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="app-card kpi-card">
+            <div>
+                <div class="kpi-label">Avg Placement Likelihood</div>
+                <div class="kpi-value">{{ stats.avg_probability }}%</div>
+                <div class="kpi-meta">
+                    <i class="bi bi-graph-up-arrow text-info"></i>
+                    <span>ML ensemble confidence</span>
+                </div>
+            </div>
+            <div class="kpi-icon-box icon-blue">
+                <i class="bi bi-pie-chart"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Accuracy -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="app-card kpi-card">
+            <div>
+                <div class="kpi-label">Model Accuracy</div>
+                <div class="kpi-value">{{ metrics.metrics.accuracy }}%</div>
+                <div class="kpi-meta">
+                    <i class="bi bi-check2-circle text-success"></i>
+                    <span>Test set F1: {{ metrics.metrics.f1_score }}%</span>
+                </div>
+            </div>
+            <div class="kpi-icon-box icon-amber">
+                <i class="bi bi-cpu"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Category Distribution Doughnut -->
+    <div class="col-12 col-lg-5">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold m-0">Placement Category Breakdown</h5>
+                <span class="badge badge-primary">Model Distribution</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="categoryDoughnutChart"></canvas>
+            </div>
+            <div class="d-flex justify-content-around mt-3 pt-2 border-top text-center">
+                <div>
+                    <span class="d-block fw-bold text-success fs-5">{{ stats.category_counts.get('High Placement Likelihood', 0) }}</span>
+                    <small class="text-muted">High Likelihood</small>
+                </div>
+                <div>
+                    <span class="d-block fw-bold text-primary fs-5">{{ stats.category_counts.get('Moderate Placement Likelihood', 0) }}</span>
+                    <small class="text-muted">Moderate</small>
+                </div>
+                <div>
+                    <span class="d-block fw-bold text-danger fs-5">{{ stats.category_counts.get('Needs Improvement / At Risk', 0) }}</span>
+                    <small class="text-muted">Needs Attention</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CGPA Distribution Bar Chart -->
+    <div class="col-12 col-lg-7">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold m-0">CGPA Bracket Distribution</h5>
+                <span class="badge badge-primary">Academic Tiers</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+                <canvas id="cgpaBarChart"></canvas>
+            </div>
+            <p class="text-muted small mt-3 mb-0">
+                <i class="bi bi-info-circle me-1"></i> Data represents the academic distribution of analyzed engineering students stored in SQLite.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Predict Banner & Recent Prediction Records -->
+<div class="row g-4">
+    <!-- Action Banner -->
+    <div class="col-12 col-xl-4">
+        <div class="app-card p-4 h-100 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #FAF9FE 0%, #FFFFFF 100%);">
+            <div>
+                <div class="badge bg-primary-subtle text-primary border border-primary-subtle mb-3">
+                    <i class="bi bi-sparkles me-1"></i> Fast Evaluation
+                </div>
+                <h4 class="fw-bold text-dark">Analyze Student Readiness</h4>
+                <p class="text-muted small">
+                    Input academic metrics, coding aptitude, communication skills, and internship details to get instant ML placement predictions, gap analysis, and tailored roadmaps.
+                </p>
+                
+                <ul class="list-unstyled small text-muted mb-4">
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Random Forest placement probability</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> 0-100 Composite Readiness Index</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Domain skill-gap analysis (SDE, ML, DevOps)</li>
+                </ul>
+            </div>
+            <a href="{{ url_for('predict_page') }}" class="btn-primary-custom w-100 justify-content-center">
+                <i class="bi bi-rocket-takeoff-fill"></i>
+                <span>Open Prediction Tool</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent History Table -->
+    <div class="col-12 col-xl-8">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="fw-bold m-0">Recent Student Evaluations</h5>
+                    <small class="text-muted">Latest analyzed engineering candidates</small>
+                </div>
+                <a href="{{ url_for('history_page') }}" class="btn-outline-custom text-decoration-none py-1 px-3 fs-6">
+                    View All Records <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </div>
+
+            {% if recent_predictions %}
+            <div class="table-responsive">
+                <table class="app-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>CGPA</th>
+                            <th>Target Domain</th>
+                            <th>Likelihood</th>
+                            <th>Readiness</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_predictions %}
+                        <tr>
+                            <td class="fw-bold text-dark">
+                                <i class="bi bi-person-circle text-primary me-2"></i>{{ r.student_name }}
+                            </td>
+                            <td>{{ r.cgpa }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ r.preferred_domain }}</span></td>
+                            <td class="fw-bold">{{ r.placement_probability }}%</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold">{{ r.readiness_score }}</span>
+                                    <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ r.readiness_score }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if 'High' in r.predicted_category %}
+                                    <span class="category-pill badge-success">High</span>
+                                {% elif 'Moderate' in r.predicted_category %}
+                                    <span class="category-pill badge-primary">Moderate</span>
+                                {% else %}
+                                    <span class="category-pill badge-danger">At Risk</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                No student evaluations found. Start your first prediction!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const resp = await fetch("/api/analytics-data");
+        const json = await resp.json();
+        if (!json.success || !json.data.has_data) return;
+
+        const data = json.data;
+
+        // 1. Category Doughnut Chart
+        const catLabels = Object.keys(data.category_distribution);
+        const catValues = Object.values(data.category_distribution);
+
+        const doughnutCtx = document.getElementById("categoryDoughnutChart");
+        if (doughnutCtx) {
+            new Chart(doughnutCtx, {
+                type: "doughnut",
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catValues,
+                        backgroundColor: ["#10B981", "#5B4BC4", "#EF4444"],
+                        borderWidth: 2,
+                        borderColor: "#FFFFFF"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+                    },
+                    cutout: "68%"
+                }
+            });
+        }
+
+        // 2. CGPA Distribution Bar Chart
+        const cgpaLabels = Object.keys(data.cgpa_distribution);
+        const cgpaValues = Object.values(data.cgpa_distribution);
+
+        const cgpaCtx = document.getElementById("cgpaBarChart");
+        if (cgpaCtx) {
+            new Chart(cgpaCtx, {
+                type: "bar",
+                data: {
+                    labels: cgpaLabels,
+                    datasets: [{
+                        label: "Number of Students",
+                        data: cgpaValues,
+                        backgroundColor: "rgba(91, 75, 196, 0.8)",
+                        borderRadius: 6,
+                        hoverBackgroundColor: "#5B4BC4"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+    } catch (e) {
+        console.error("Dashboard chart error:", e);
+    }
+});
+</script>
+{% endblock %}

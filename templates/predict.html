@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Readiness — PathFinder AI{% endblock %}
+{% block page_title %}Student Placement Prediction Form{% endblock %}
+{% block page_subtitle %}Evaluate campus readiness using academic, aptitude, coding, and internship parameters{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Input Form Column -->
+    <div class="col-12 col-xl-7">
+        <div class="app-card p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                <div>
+                    <h5 class="fw-bold m-0 text-dark">Student Profile Assessment</h5>
+                    <small class="text-muted">Fill out candidate metrics accurately for genuine ML evaluation</small>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="bi bi-shield-check me-1"></i> Validated Input
+                </span>
+            </div>
+
+            <!-- Validation / Error Alert Box -->
+            <div id="predictionAlert" class="alert d-none" role="alert"></div>
+
+            <form id="placementPredictForm" novalidate>
+                <!-- Row 1: Student Name & Target Domain -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="student_name" class="form-label">
+                            <i class="bi bi-person text-primary me-1"></i> Student Full Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="student_name" name="student_name" placeholder="e.g. Rahul Sharma" required minlength="2" maxlength="100">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="preferred_domain" class="form-label">
+                            <i class="bi bi-compass text-primary me-1"></i> Preferred Career Domain <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="preferred_domain" name="preferred_domain">
+                            {% for key, val in domains.items() %}
+                                <option value="{{ key }}" {% if key == 'Software Developer' %}selected{% endif %}>{{ key }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 2: CGPA & Aptitude Score -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="cgpa" class="form-label">
+                            <i class="bi bi-mortarboard text-primary me-1"></i> Cumulative CGPA (0.00 – 10.00) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="cgpa" name="cgpa" placeholder="e.g. 8.25" step="0.01" min="0" max="10" required value="7.80">
+                        <div class="form-text">Aggregated grade point average across completed semesters.</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="aptitude_score" class="form-label">
+                            <i class="bi bi-calculator text-primary me-1"></i> Aptitude Test Score (0 – 100) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="aptitude_score" name="aptitude_score" placeholder="e.g. 78" step="0.5" min="0" max="100" required value="75">
+                        <div class="form-text">Quantitative, logical reasoning, and verbal assessment score.</div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Technical & Communication Sliders -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label d-flex justify-content-between">
+                            <span><i class="bi bi-code-slash text-primary me-1"></i> Technical Skill Rating (1–10)</span>
+                            <span class="slider-value-badge" id="techScoreVal">7.5</span>
+                        </label>
+                        <input type="range" class="form-range form-range-sync" id="technical_score" name="technical_score" min="1" max="10" step="0.5" value="7.5" data-target="techScoreVal">
+                        <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                            <span>Beginner (1)</span>
+                            <span>Intermediate (5)</span>
+                            <span>Advanced (10)</span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label d-flex justify-content-between">
+                            <span><i class="bi bi-chat-quote text-primary me-1"></i> Communication Rating (1–10)</span>
+                            <span class="slider-value-badge" id="commScoreVal">7.0</span>
+                        </label>
+                        <input type="range" class="form-range form-range-sync" id="communication_score" name="communication_score" min="1" max="10" step="0.5" value="7.0" data-target="commScoreVal">
+                        <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                            <span>Hesitant (1)</span>
+                            <span>Competent (5)</span>
+                            <span>Articulate (10)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Internships, Projects & Backlogs -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-4">
+                        <label for="internships" class="form-label">
+                            <i class="bi bi-briefcase text-primary me-1"></i> Internships Completed
+                        </label>
+                        <input type="number" class="form-control" id="internships" name="internships" min="0" max="10" value="1" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="projects" class="form-label">
+                            <i class="bi bi-folder-check text-primary me-1"></i> Projects Completed
+                        </label>
+                        <input type="number" class="form-control" id="projects" name="projects" min="0" max="20" value="3" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="backlogs" class="form-label">
+                            <i class="bi bi-exclamation-triangle text-danger me-1"></i> Active Backlogs
+                        </label>
+                        <input type="number" class="form-control" id="backlogs" name="backlogs" min="0" max="10" value="0" required>
+                        <div class="form-text">Standing arrears in current semester.</div>
+                    </div>
+                </div>
+
+                <!-- Row 5: Programming Skills Tags -->
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="bi bi-tags text-primary me-1"></i> Programming Skills & Technologies (Select all that apply)
+                    </label>
+                    <div class="skill-tags-group">
+                        {% set skills_list = ['Python', 'Java', 'C++', 'SQL', 'JavaScript', 'React', 'Node.js', 'Flask', 'Spring Boot', 'Linux', 'Docker', 'AWS', 'Git', 'Tableau', 'PyTorch', 'Data Structures'] %}
+                        {% for s in skills_list %}
+                            <input type="checkbox" class="skill-tag-check" id="skill_{{ loop.index }}" value="{{ s }}" {% if s in ['Python', 'SQL', 'Git'] %}checked{% endif %}>
+                            <label class="skill-tag-label" for="skill_{{ loop.index }}">{{ s }}</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Form Submit Button -->
+                <div class="d-flex align-items-center justify-content-between pt-2">
+                    <button type="reset" class="btn-outline-custom">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Form
+                    </button>
+                    <button type="submit" class="btn-primary-custom" id="predictSubmitBtn">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <span class="btn-text"><i class="bi bi-lightning-charge-fill me-1"></i> Evaluate Placement Readiness</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Output & Assessment Column (Initially placeholder or active result) -->
+    <div class="col-12 col-xl-5">
+        <!-- Results Container (Displayed upon submission) -->
+        <div id="predictionResultSection" class="d-none">
+            <!-- Result Hero Card -->
+            <div class="app-card result-hero mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span id="resCategoryPill" class="category-pill badge-primary">Evaluating...</span>
+                        <h4 class="fw-bold mt-2 mb-1" id="resStudentName">Student Name</h4>
+                        <p class="text-muted small mb-0" id="resCategoryDesc">Profile assessment description</p>
+                    </div>
+
+                    <!-- Readiness Gauge -->
+                    <div class="gauge-box">
+                        <svg class="readiness-meter-ring" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" stroke="#E2E8F0"></circle>
+                            <circle id="readinessSvgCircle" cx="50" cy="50" r="40" stroke="#5B4BC4" stroke-dasharray="251.2" stroke-dashoffset="50"></circle>
+                        </svg>
+                        <div class="gauge-text">
+                            <div class="gauge-number" id="resReadinessScore">85</div>
+                            <div class="gauge-caption">Readiness</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Probability Bar -->
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="fw-bold text-dark"><i class="bi bi-cpu text-primary me-1"></i> ML Model Placement Likelihood:</small>
+                        <span class="fw-bold text-primary fs-6" id="resPlacementProb">88.5%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div id="resProbProgressBar" class="progress-bar bg-primary" role="progressbar" style="width: 88%"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2" style="font-size: 0.725rem;">
+                        <i class="bi bi-info-circle me-1"></i> Likelihood represents Random Forest statistical prediction; Readiness score reflects 5-pillar composite index.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Radar Competency Chart -->
+            <div class="app-card p-4 mb-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Competency Assessment Radar</h6>
+                <div style="height: 240px; position: relative;">
+                    <canvas id="studentRadarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 4 Pillar Assessments -->
+            <div class="row g-2 mb-4">
+                <div class="col-6">
+                    <div class="pillar-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="m-0">Academic</h6>
+                            <span class="badge" id="resAcadStatus">Solid</span>
+                        </div>
+                        <p id="resAcadSummary" class="small text-muted">Assessment summary</p>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="pillar-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="m-0">Technical</h6>
+                            <span class="badge" id="resTechStatus">Solid</span>
+                        </div>
+                        <p id="resTechSummary" class="small text-muted">Assessment summary</p>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="pillar-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="m-0">Communication</h6>
+                            <span class="badge" id="resCommStatus">Solid</span>
+                        </div>
+                        <p id="resCommSummary" class="small text-muted">Assessment summary</p>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="pillar-card">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="m-0">Experience</h6>
+                            <span class="badge" id="resExpStatus">Solid</span>
+                        </div>
+                        <p id="resExpSummary" class="small text-muted">Assessment summary</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skill Gap & Roadmap -->
+            <div class="app-card p-4 mb-4">
+                <h6 class="fw-bold mb-2">
+                    <i class="bi bi-briefcase-fill text-primary me-2"></i>Target Domain: <span id="resDomainTitle" class="text-primary">Software Developer</span>
+                </h6>
+                <div class="mb-3">
+                    <small class="fw-bold text-muted d-block mb-1">Recognized Competencies:</small>
+                    <div id="resMatchedSkills"></div>
+                </div>
+                <div class="mb-3">
+                    <small class="fw-bold text-muted d-block mb-1">Recommended Skill Enhancements:</small>
+                    <div id="resMissingSkills"></div>
+                </div>
+                <a href="{{ url_for('career_guidance_page') }}" class="btn-outline-custom w-100 text-center text-decoration-none py-2 d-block">
+                    View Comprehensive Career Roadmap <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <!-- Actionable Recommendations List -->
+            <div class="app-card p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-lightbulb-fill text-amber me-2"></i>Actionable Improvement Plan</h6>
+                <ul class="list-unstyled mb-0" id="resRecommendationsList"></ul>
+            </div>
+        </div>
+
+        <!-- Initial Placeholder when no prediction has been submitted yet -->
+        <div id="predictionPlaceholder" class="app-card p-5 text-center h-100 d-flex flex-column align-items-center justify-content-center">
+            <div class="kpi-icon-box icon-purple mb-3 mx-auto" style="width: 64px; height: 64px; font-size: 2rem;">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Awaiting Submission</h5>
+            <p class="text-muted small" style="max-width: 320px;">
+                Complete the student profile on the left and click <strong>Evaluate Placement Readiness</strong> to view real-time ML placement likelihood, score breakdowns, radar charts, and personalized career roadmaps.
+            </p>
+            <div class="d-flex gap-2 justify-content-center mt-2">
+                <span class="badge bg-light text-muted border">Random Forest (scikit-learn)</span>
+                <span class="badge bg-light text-muted border">SQLite Persisted</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
